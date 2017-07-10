@@ -1,0 +1,434 @@
+#+TITLE: Data pipelines
+#+AUTHOR: Adolfo De Unánue
+#+EMAIL: adolfo@uchicago.edu
+#+LANGUAGE:  en
+
+
+* Data
+
+#+ATTR_ORG: :width 600px :height 600px
+#+ATTR_HTML: :width 800px :height 600px
+#+ATTR_LATEX: :height 150px :width 200px
+[[./images/data-data-everywhere.jpg]]
+
+* Immutability
+
+#+BEGIN_QUOTE
+An immutable object is an object whose state cannot be modified after it is created
+
+*Source* [[https://en.wikipedia.org/wiki/Immutable_object][Wikipedia]]
+#+END_QUOTE
+
+Simple, right?
+
+* Data immutability
+
+We must handle our data as *immutable*:
+
+- Every observation is about a event in the past
+
+- It cannot be changed!
+  - At least that you /actually/ believe in [[https://en.wikipedia.org/wiki/Retrocausality#cite_note-38][retrocausality]]
+
+
+* Why?
+
+- You can always go back to the source if something breaks
+
+- Every transformation creates a new data set
+  - In this way, you can always track your steps (/Data lineage, see below/)
+
+- If you accept the /data immutability/, the next step is think about how to
+  transform the data along the way
+
+- You need to think in *transformations*, i.e. data is not a "point" it is
+  a "string" (i.e. a chain of transformations).
+
+- Suddenly, you will be falling in the rabbit hole of [[https://maryrosecook.com/blog/post/a-practical-introduction-to-functional-programming][Functional programming]] (*FP*)
+
+* A few concepts (and why they are important)
+
+- Data lineage / Data provenance
+- Data pipeline
+- Data governance
+
+* Data lineage
+- The *data lineage* give you the data's origin (/data provenance/) and
+  how it transforms over time (/data dynamics/).
+
+- It allows you explain the results and detect errors
+
+- There are two levels: datasource-level, or tuple-level
+
+* Data Governance
+
+- Audits: all the events must be traceable with the lineage
+- Transparency
+- Reproducibility
+- Consistency
+
+* Data Governance: How?
+
+You need to add to your data:
+- Metadata
+  - Technical, Business, Operational
+- Semantics
+  - Which are the objects with are you using for describing the
+    reality under your study?
+  - Which are the dynamics underlying those objects?
+- Ontology
+  - How those objects are connected? Which is the hierarchy?
+
+
+* A conceptual detour: "The model"
+
+- Maybe you use *model* and *ml algorithm* interchangeably, but they
+  different!
+
+#+BEGIN_QUOTE
+model != ml algorithm
+#+END_QUOTE
+
+- This is a model:
+#+BEGIN_QUOTE
+ model <- Data lineage (including cleaning, transformation,
+  extraction) + ml algorithm + hyperparameters
+#+END_QUOTE
+
+- Or more exactly:
+
+#+BEGIN_QUOTE
+ model <- Data lineage (including cleaning, transformation,
+  extraction) + ml algorithms + hyperparameters + cross-validation
+  strategy + metric + model selection algorithm
+#+END_QUOTE
+
+- You can think the model as the final "destination" of the data
+
+- This distinction is easier to grasp in =Spark= than in =Scikit learn=
+
+* Data pipeline
+
+#+BEGIN_QUOTE
+A data pipeline is a directed execution graph (DAG) with multiple cleanly separated
+data processing steps, which are like small, clear pools: easy to know what’s in
+there.
+#+END_QUOTE
+From K Young [[https://www.linkedin.com/pulse/hows-data-lake-k-young][How's that data lake]]
+
+- The data pipeline gives you the data lineage and the data lineage
+  gives you the data governance (ideally)
+
+- Another names for this are orchestration, workflow, etc.
+
+* Data pipeline
+
+- It will represented by a DAG
+
+- It should be identifiable (or work as a function)
+
+- It must be *Idempotent*
+
+- It must support /checkpointing/
+
+
+* How does it look like?
+
+
+#+CAPTION: A data pipeline
+#+ATTR_ORG: :width 600px :height 600px
+#+ATTR_HTML: :width 800px :height 600px
+#+ATTR_LATEX: :height 150px :width 200px
+[[file:images/screenshot-20170704-184237.png]]
+Source: K Young [[https://www.linkedin.com/pulse/hows-data-lake-k-young][How's that data lake]]
+
+It looks nice, but, What is the meaning of the nodes?
+
+
+#+BEGIN_NOTES
+This concept will show up again, and again in Spark, Scikit learn,
+maggrit, etc.
+#+END_NOTES
+
+
+* Point of view
+
+- Data centric
+- Task centric
+
+* Data centric
+
+You need to desribe the /flow/ of the data using the functions.
+
+I believe this is the most powerful way of thinking about data
+pipelines, (It has roots in [[http://math.mit.edu/~dspivak/informatics/talks/CTDBIntroductoryTalk][Categorical theory]])
+
+
+#+RESULTS: data-centric
+[[file:./images/data-centric-pipeline.png]]
+
+- Examples: [[http://pachyderm.io][Pachyderm]]
+
+* Task centric
+
+You concentrate in define the /inputs/ and /outputs/ of the function
+
+Maybe is easy to think about it, and most of the people when draw a
+pipeline, draws something similar to this.
+
+
+#+RESULTS: task-centric
+[[file:./images/task-centric-pipeline.png]]
+
+
+- Examples: [[https://airflow.incubator.apache.org/][Airflow]], [[https://luigi.readthedocs.io/en/latest/api/luigi.html][Luigi]]
+
+* Luigi: Task-centric
+
+* Luigi
+
+- Spotify
+
+- Written in =python=
+  - But you can run everything inside a task: =R=, =bash=, =Spark=, =SQL=,
+    etc.
+  - But, being fair, you will embed  that code inside =python=
+
+- Integrated with =hdfs=
+
+- Specialized tasks
+
+* Parts
+
+- *Task* the basic unit of operation.
+  - The node of the DAG
+
+- *Target* the output or input of a task.
+  - The edges of the DAG
+
+- *Worker* The main unit, it will schedule the tasks of the DAG and it
+  will execute them
+
+- *Server* A central scheduler
+
+- =luigi.cfg= A configuration file
+
+* Execution model
+
+- The execution is not transfered (i.e. the code)
+- The /worker/ informs to *master*  about all its tasks and the *master*
+  assign them to the available workers.
+  - Remember that the DAG and the task are identifiable, so there are
+    not job duplications
+- The Task id of the Task (and the Task outputs need to change) if you
+  want to run again the pipeline
+
+- *NOTE*: The /triggering/ of the pipeline isn't handled by Luigi
+
+* Task anatomy
+
+#+BEGIN_EXAMPLE python
+  # coding: utf-8
+
+  import luigi
+  import luigi.s3
+
+  class SimpleTask(luigi.Task):
+
+        def requires(self):
+            pass
+
+        def output(self):
+            pass
+
+        def run(self):
+            pass
+
+#+END_EXAMPLE
+
+
+* Weak points
+
+- The model is object-oriented, so you need to create classes through
+  inheritance.
+- The task is defined with the inputs and outputs, so the DAG
+  definition is local (In more technical terms this is not a
+  [[https://clojure.org/reference/transducers][transducer]])
+
+
+* Luigi demo
+
+#+RESULTS: iris-luigi
+[[file:./images/iris-luigi.png]]
+
+
+* Advanced demo
+
+
+The recommended way of running Luigi is using Tasks inside some
+container, see [[https://github.com/nanounanue/pipeline-template][Luigi Pipeline Template (using Docker)]].
+
+* Pachyderm: Data-centric
+
+* Pachyderm
+
+- Written in =Go=
+- Completely =language agnostic=
+- It's like =github= for data
+- It's like =docker= for /Data science pipelines/
+- The pipeline is specified using a =json= file
+- The identifiable unit is the *data*
+
+* Parts
+
+- A cluster for running containers (Kubernetes) and =pachyderm= 's data
+  repos
+- A Docker registry (could be [[http://hub.docker.com][Dockerhub]])
+- The "task" is inside a Docker container (so, you need a =Dockerfile=
+  and the =code= that defines the transformation), this is know as
+  =pipeline=
+- A data repository, know as  =repo=.
+
+* Execution model
+
+- You define some data repositories (this are the nodes of your DAG)
+- You define some pipeline that connects those nodes (the edges of the
+  DAG)
+- Every time some data is committed to a repo, the DAG is executed
+
+* "Task" anatomy
+
+From the documentation
+
+#+BEGIN_EXAMPLE json
+# edges.json
+{
+  "pipeline": {
+    "name": "ds-stuff"
+  },
+  "transform": {
+    "cmd": [ "python", "/ds-magic.py" ],
+    "image": "nanounanue/python"
+  },
+  "input": {
+    "atom": {
+      "repo": "my-data",
+      "glob": "/*"
+    }
+  }
+}
+#+END_EXAMPLE
+
+
+* Pachyderm demo
+
+#+CAPTION: Pachyderm pipeline
+[[file:images/screenshot-20170705-110931.png]]
+
+*Source*: [[https://github.com/pachyderm/pachyderm/tree/master/doc/examples/ml/iris][Pachyderm github]]
+
+
+* COMMENT Settings
+# Local Variables:
+# org-babel-sh-command: "/bin/bash"
+# org-confirm-babel-evaluate: nil
+# org-export-babel-evaluate: nil
+# ispell-check-comments: exclusive
+# ispell-local-dictionary: "british"
+# End:
+
+
+* Image generation
+
+#+NAME: data-centric
+#+BEGIN_SRC ditaa :file ./images/data-centric-pipeline.png
+
++--------+        +--------+                 +--------+
+|{s}     |  f1    |{s}     | f2          fn  |{s}     |
+|  DS A  +------->|  DS B  +----> . . . ---->|   DS'  |
+|        |        |        |                 |        |
++--------+        +--------+                 +--------+
+#+END_SRC
+
+#+NAME: task-centric
+#+BEGIN_SRC ditaa :file ./images/task-centric-pipeline.png
+      +--------+        +--------+                 +--------+
+ DSA  |        |  DSB   |        | DSC        DSZ  |        |  DS'
+----->|  f1    +------->|   f2   +----> . . . ---->|   fn   |----->
+      |        |        |        |                 |        |
+      +--------+        +--------+                 +--------+
+#+END_SRC
+
+
+#+NAME: iris-luigi
+#+BEGIN_SRC ditaa :file ./images/iris-luigi.png
+                                                        +----------------+
+                                                        |  IrisPipeline  |
+                                                        +----------------+
+                                                                ^
+                                                                |
+                                   +----------------------------+--------------------------------+
+                                   |                            |                                |
+                          +--------+-------+            +-------+--------+              +--------+-------+
+                          | TrainModel(RF) |            | TrainModel(SVC)|              | TrainModel(LR) |
+                          +----------------+            +----------------+              +----------------+
+                                   ^                            ^                                ^
+                                   |                            |                                |
+                                   |                    +-------+--------+                       |
+                                   +--------------------+ TrainTestSplit +-----------------------+
+                                                        +----------------+
+                                                                ^
+                                                                |
+                                                        +-------+--------+
+                                                        |    IrisData    |
+                                                        +----------------+
+
+#+END_SRC
+
+
+* Speaker notes
+#+BEGIN_NOTES
+** Technical Metadata
+
+ - Nombre de la fuente
+ - Nombre de la base de datos
+ - Nombre de la columna
+ - Tipo de dato
+ - Fecha de creación
+ - Fecha de modificación
+ - Versión de código
+ - Versión de infraestructura
+
+** Business Metadata
+
+ - Nombre de negocio
+ - Definición de negocio
+ - Clasificación de negocio
+ - Etiquetas
+ - Etiquetas /sensibles/
+
+** Operational Metadata
+
+ - Acceso
+ - Información de los /jobs/
+ - Logs
+ - /Audit trails/
+ - Locación
+
+ #+END_NOTES
+
+* Sidebar: Data Storage
+
+- It could determine [[https://blogs.scientificamerican.com/guest-blog/meaning-on-the-brain-how-your-mind-organizes-reality/][how do you think about your data (your reality)]]
+
+- A polyglot database environment could give you easy access to
+  building new features for your machine learning models.
+
+- In a Data product you will need most of them
+
+#+ATTR_ORG: :width 400px :height 200px
+#+ATTR_HTML: :width 800px :height 300px
+#+ATTR_LATEX: :height 150px :width 200px
+[[./images/graph-databases-for-beginners-nosql-databases.jpg]]
+
+*Source*: [[https://neo4j.com/blog/why-nosql-databases/][Graph Databases for Beginners: Why We Need NOSQL Databases =Neo4J=]]

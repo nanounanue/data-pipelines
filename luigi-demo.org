@@ -1,0 +1,64 @@
+#+TITLE:  Iris dataset (Luigi demo)
+#+AUTHOR: Adolfo De Unánue
+#+DATE:   2017-07-04
+
+This document is a simple presentation that can show off the
+many...well, the few features of the =demo-it= project.
+
+* Introduction
+
+The =pipeline= is contained in the =iris.py= file.
+
+All the =luigi.Task= are defined there
+
+[[./images/iris-luigi.png]]
+
+* IrisPipeline
+
+- This class is a =luigi.WrapperTask=.
+
+- =WrapperTask= are special, they only need to implement =requires()=
+  method.
+
+- Regularly they are used as the end point of the pipeline.
+
+- Here we have *3* =requirements=: =TrainModel(RF), TranModel(SVC), TrainModel(LR)=
+
+
+* TrainModel
+
+- The next task is =TrainModel=, this class is /required/ from
+  =IrisPipeline= with different =luigi.Parameter= (in this case =algorithm=)
+
+- The parameter define the "name" (the =id=) of the Task (and that makes it
+  identifiable)
+
+- This is  regular =luigi.Task=, so, all the methods are implemented.
+
+- It depends on =TrainTestSplit=
+
+- It has two outputs: a description of the trained model
+  (=algorithm_metatada.txt=) and the model itself (=algorithm.pkl=)
+
+* TrainTestSplit
+
+- This is also a regular =luigi.Task=.
+
+- It has 4 outputs: =X_train=, =X_test=, =y_train=, =y_test=
+
+* IrisData
+
+- Finally, is the original *iris* data set.
+
+- =IrisData= is a =ExternalTask=. This class is used as the beginning of
+  the pipeline. You only need to implement the =output= method.
+
+* Let's run it
+
+It is a good practice to add a =__main__= method, and it is very easy to
+use.
+
+- Target directories are empty
+- Run the pipeine with =python iris.py=
+- Target files were created
+- The pipeline is *Idempotent*
