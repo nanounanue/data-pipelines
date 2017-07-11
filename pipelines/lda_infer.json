@@ -1,0 +1,33 @@
+{
+  "pipeline": {
+    "name": "inference"
+  },
+  "transform": {
+    "image": "nanounanue/iris-infer:lda",
+    "cmd": [
+        "python",
+        "/code/infer.py",
+        "/pfs/model/",
+        "/pfs/attributes/",
+        "/pfs/out/"
+    ]
+  },
+  "input": {
+    "cross": [
+      {
+        "atom": {
+            "repo": "attributes",
+            "branch": "master",
+            "glob": "/*"
+        }
+      },
+      {
+        "atom": {
+            "repo": "model",
+            "branch": "master",
+            "glob": "/"
+        }
+      }
+    ]
+  }
+}

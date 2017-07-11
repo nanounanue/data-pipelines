@@ -1,0 +1,21 @@
+{
+  "pipeline": {
+    "name": "model"
+  },
+  "transform": {
+    "image": "nanounanue/iris-train:lda",
+    "cmd": [
+        "python",
+        "/code/train.py",
+        "/pfs/training/",
+        "/pfs/out/"
+    ]
+  },
+  "input": {
+    "atom": {
+        "repo": "training",
+        "branch": "master",
+        "glob": "/"
+    }
+  }
+}
