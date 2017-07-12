@@ -1,8 +1,0 @@
-Daniel Whitenack
-[9:10 AM]
-@nanounanue I would recommend having a repo for your training data and
-repo of parameters.  You can then have those two be input to a model
-training/testing pipeline, where you always see all of the training
-data but you parallelize on the parameters.  That way you can do easy
-distributed hyperparameter search.  You can then output scores to
-another repo and automate the selection of the optimal parameters.
