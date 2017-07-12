@@ -1,0 +1,33 @@
+{
+  "pipeline": {
+    "name": "train_models"
+  },
+  "transform": {
+    "image": "nanounanue/train_model:0.1",
+    "cmd": [
+        "python",
+        "/code/train_model.py",
+        "/pfs/params_gen/",
+        "/pfs/training/",
+        "/pfs/out/"
+    ]
+  },
+  "input": {
+    "cross": [
+      {
+        "atom": {
+            "repo": "params_gen",
+            "branch": "master",
+            "glob": "/*"
+        }
+      },
+      {
+        "atom": {
+            "repo": "training",
+            "branch": "master",
+            "glob": "/"
+        }
+      }
+    ]
+  }
+}

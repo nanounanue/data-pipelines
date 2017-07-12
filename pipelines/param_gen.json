@@ -1,0 +1,19 @@
+{
+  "pipeline": {
+    "name": "params_gen"
+  },
+  "transform": {
+    "image": "nanounanue/params_gen:0.1",
+    "cmd": [
+        "python",
+        "/code/param_gen.py"
+    ]
+  },
+  "input": {
+    "atom": {
+        "repo": "params",
+        "branch": "master",
+        "glob": "/"
+    }
+  }
+}
