@@ -31,11 +31,11 @@ def train(input_dir, output_dir):
 
     # output a text description of the model
     f = open(os.path.join(output_dir, 'model.txt'), 'w')
-    f.write(str(lda))
+    f.write(str(svc))
     f.close()
 
     # persist the model
-    joblib.dump(lda, os.path.join(output_dir, 'model.pkl'))
+    joblib.dump(svc, os.path.join(output_dir, 'model.pkl'))
 
 
 if __name__ == "__main__":

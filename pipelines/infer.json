@@ -3,7 +3,7 @@
     "name": "inference"
   },
   "transform": {
-    "image": "nanounanue/iris-infer:lda",
+    "image": "nanounanue/iris-infer:0.1",
     "cmd": [
         "python",
         "/code/infer.py",

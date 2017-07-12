@@ -14,16 +14,24 @@
 ;; Demonstration creation and the ordering of steps...
 
 (demo-it-create :full-screen :single-window :insert-fast :advance-mode :variable-width
+                (demo-it-title-screen "pachyderm-demo.org")
+                ;;(demo-it-presentation "pachyderm-demo.org")
+                ;;(demo-it-show-image "images/data-centric-pipeline.png" :below :large 30)
+                ;;(demo-it-presentation-return)
+                ;;(demo-it-show-image "images/screenshot-20170705-110839.png" :below :large 30)
+                ;;(demo-it-presentation-return-noadvance)
                 (demo-it-start-shell nil nil nil :below :large 30)
                 (demo-it-run-in-shell "pachctl delete-all")
                 (demo-it-run-in-shell "pachctl list-repo")
                 ;; Let's create the repos
+                ;;(demo-it-presentation-advance)
                 (demo-it-run-in-shell "pachctl create-repo training")
                 (demo-it-run-in-shell "pachctl create-repo attributes")
                 (demo-it-run-in-shell "pachctl list-repo")
                 ;; Let's create the pipelines
-                (demo-it-run-in-shell "pachctl create-pipeline -f pipelines/lda_train.json") ;; At this moment nothing happens, since we don't have commits in the repo
-                (demo-it-run-in-shell "pachctl create-pipeline -f pipelines/lda_infer.json")
+                ;;(demo-it-presentation-advance)
+                (demo-it-run-in-shell "pachctl create-pipeline -f pipelines/train.json") ;; At this moment nothing happens, since we don't have commits in the repo
+                (demo-it-run-in-shell "pachctl create-pipeline -f pipelines/infer.json")
                 (demo-it-run-in-shell "pachctl list-pipeline")
                 (demo-it-run-in-shell "pachctl list-job")
                 ;; Now we could add more data
@@ -32,12 +40,50 @@
                 (demo-it-run-in-shell "pachctl list-repo")
                 (demo-it-run-in-shell "pachctl list-file training master")
                 (demo-it-run-in-shell "pachctl list-file model master")
+                (demo-it-run-in-shell "pachctl get-file model master model.txt")
+                ;;(demo-it-presentation-advance)
                 ;; Let's do inference
                 (demo-it-run-in-shell "pachctl put-file attributes master / -c -r -f data/test") ;; this will trigger the infer pipeline
                 ;;                                      repo       branch path flags file
                 (demo-it-run-in-shell "pachctl list-job")
-
-                ;;(demo-it-run-in-shell "tree data") ;; This data is outside the repo
+                (demo-it-run-in-shell "pachctl list-file inference master")
+                (demo-it-run-in-shell "pachctl get-file inference master 1.csv")
+                (demo-it-run-in-shell "pachctl get-file inference master 2.csv")
+                ;; Let's change our model to a SVC
+                ;;(demo-it-presentation-advance)
+                (demo-it-load-file "pipelines/train.json" :side :small 40)
+                ;;(demo-it-presentation-return-noadvance)
+                (demo-it-run-in-shell "pachctl update-pipeline -f pipelines/train.json")
+                (demo-it-run-in-shell "pachctl list-job")
+                (demo-it-run-in-shell "pachctl list-file inference master")
+                (demo-it-run-in-shell "pachctl get-file model master model.txt")
+                (demo-it-run-in-shell "pachctl list-commit inference")
+                ;; Trace
+                ;; pachctl list-job
+                ;; pachctl list-repo
+                ;; pachctl list-commit inference
+                ;; pachctl inspect-commit inference 781241155cf44351b6a3eb7059c8ee9e
+                ;; pachctl get-file model 98f85e48160742e7b6d7aa1ea41872cd
+                ;; pachctl get-file model 98f85e48160742e7b6d7aa1ea41872cd model.txt
+                ;; Now, some hyperparameter tunning
+                ;;(demo-it-presentation-advance)
+                (demo-it-run-in-shell "pachctl delete-all")
+                (demo-it-run-in-shell "pachctl  create-repo training")
+                (demo-it-run-in-shell "pachctl  create-repo params")
+                (demo-it-run-in-shell "pachctl create-pipeline -f pipelines/param_gen.json")
+                (demo-it-presentation-advance)
+                (demo-it-load-file "pipelines/train.json" :side :small 40)
+                (demo-it-presentation-return-noadvance)
+                (demo-it-run-in-shell  "pachctl create-pipeline -f pipelines/model_training.json")
+                (demo-it-run-in-shell  "pachctl list-repo")
+                (demo-it-run-in-shell  "pachctl put-file training master iris.csv -c -f data/iris.csv")
+                (demo-it-run-in-shell  "pachctl list-repo")
+                (demo-it-run-in-shell  "pachctl put-file params master clfs.json -c -f params/clfs.json")
+                (demo-it-run-in-shell  "pachctl list-job")
+                (demo-it-run-in-shell  "pachctl list-repo")
+                (demo-it-run-in-shell  "pachctl get-logs --pipeline train_models")
+                (demo-it-run-in-shell  "pachctl get-logs --pipeline params_gen")
+                (demo-it-run-in-shell  "pachctl list-file train_models master")
                 )
 ;; ----------------------------------------------------------------------
 ;;  Create some demonstration helper functions...
@@ -47,77 +93,6 @@
   (ignore-errors
     (kill-buffer "iris.py"))
   (demo-it-load-file "iris.py" :side)
-  )
-
-(defun pachyderm-demo/show-irispipeline ()
-  (demo-it-presentation-return)
-  (ignore-errors
-    (kill-buffer "iris.py"))
-  (demo-it-load-part-file "iris.py" :line 103 108 :side)
-  )
-
-(defun pachyderm-demo/show-trainmodel ()
-  (demo-it-presentation-return)
-  (ignore-errors
-    (kill-buffer "iris.py"))
-  (demo-it-load-part-file "iris.py" :line 69 101 :side)
-  )
-
-(defun pachyderm-demo/show-trainmodel-requires ()
-  (demo-it-presentation-return)
-  (ignore-errors
-    (kill-buffer "iris.py"))
-  (demo-it-load-part-file "iris.py" :line 69 73 :side)
-  )
-
-(defun pachyderm-demo/show-trainmodel-output ()
-  (demo-it-presentation-return-noadvance)
-  (ignore-errors
-    (kill-buffer "iris.py"))
-  (demo-it-load-part-file "iris.py" :line 75 79 :side)
-  )
-
-(defun pachyderm-demo/show-trainmodel-run ()
-  (demo-it-presentation-return-noadvance)
-  (ignore-errors
-    (kill-buffer "iris.py"))
-  (demo-it-load-part-file "iris.py" :line 81 101 :side)
-  )
-
-(defun pachyderm-demo/show-traintestsplit ()
-  (demo-it-presentation-return)
-  (ignore-errors
-    (kill-buffer "iris.py"))
-  (demo-it-load-part-file "iris.py" :line 28 39 :side)
-  )
-
-(defun pachyderm-demo/show-traintestsplit-run ()
-  (demo-it-presentation-return-noadvance)
-  (ignore-errors
-    (kill-buffer "iris.py"))
-  (demo-it-load-part-file "iris.py" :line 40 67 :side)
-  )
-
-(defun pachyderm-demo/show-irisdata ()
-  (demo-it-presentation-return)
-  (ignore-errors
-    (kill-buffer "iris.py"))
-  (demo-it-load-part-file "iris.py" :line 24 27 :side)
-  )
-
-(defun pachyderm-demo/run-pipeline ()
-  ;;(demo-it-presentation-return-noadvance)
-  (pyenv-mode-set "3.6.1/envs/dsapp")
-  (demo-it-run-in-shell "python iris.py")
-  (pyenv-mode-unset)
-  )
-
-(defun pachyderm-demo/show-output ()
-  (demo-it-run-in-shell "tree data")
-  )
-
-(defun pachyderm-demo/show-models ()
-  (demo-it-run-in-shell "tree models")
   )
 
 (defun pachyderm-demo/clean-up ()

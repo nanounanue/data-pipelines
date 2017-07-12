@@ -24,9 +24,12 @@ def infer(model_dir, input_dir, output_dir):
 
     # walk the input attributes directory and make an
     # inference for every attributes file found
+    print("Input dir:", input_dir)
+    print("Output dir:", output_dir)
+
     for dirpath, dirs, files in os.walk(input_dir):
         for file in files:
-
+            print("Processing file:" , file)
             # read in the attributes
             attr = pd.read_csv(os.path.join(dirpath, file), names=features)
 
@@ -35,6 +38,7 @@ def infer(model_dir, input_dir, output_dir):
 
             # save the inference
             output = pd.DataFrame(pred, columns=["Species"])
+            print("The inferences will be located at:", os.path.join(output_dir, file))
             output.to_csv(os.path.join(output_dir, file), header=False, index=False)
 
 
